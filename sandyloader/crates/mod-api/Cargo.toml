@@ -1,0 +1,13 @@
+[package]
+name = "mod-api"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "API for creating Rust-based Minecraft mods with SandyLoader"
+
+[dependencies]
+jni = "0.21.1"
+log = "0.4.20"
+thiserror = "1.0.50"

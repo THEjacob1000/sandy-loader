@@ -1,0 +1,13 @@
+[workspace]
+members = [
+    "sandyloader",
+    "sandyloader/crates/*",
+    "tools/*"
+]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Jacob Sanderson jacob@jacobdevelops.com"]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/THEjacob1000/sandyloader-repo"
