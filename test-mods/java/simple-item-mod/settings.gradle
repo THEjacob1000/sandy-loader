@@ -1,0 +1,2 @@
+// test-mods/java/simple-item-mod/settings.gradle
+rootProject.name = 'simple-item-mod'

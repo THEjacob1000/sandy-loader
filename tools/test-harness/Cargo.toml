@@ -1,4 +1,3 @@
-# tools/test-harness/Cargo.toml
 [package]
 name = "test-harness"
 version.workspace = true
@@ -6,7 +5,7 @@ authors.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Test harness for comparing Java and Rust mod performance"
+description = "Test harness for SandyLoader mods"
 
 [dependencies]
 clap = { version = "4.4.8", features = ["derive"] }
@@ -14,4 +13,4 @@ serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"
 log = "0.4.20"
 env_logger = "0.10.1"
-chrono = "0.4.31"
+chrono = "0.4.35"

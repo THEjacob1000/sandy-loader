@@ -4,8 +4,10 @@
 Cargo.lock
 **/target/
 
-# Java
-.gradle/
+# Gradle
+/build
+/.gradle/
+/*/build
 
 # IDE
 .idea/

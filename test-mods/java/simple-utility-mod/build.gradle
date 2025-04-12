@@ -1,4 +1,4 @@
-// test-mods/java/simple-item-mod/build.gradle
+// test-mods/java/simple-utility-mod/build.gradle
 plugins {
     id 'java'
 }

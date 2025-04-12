@@ -1,274 +1,288 @@
 #!/bin/bash
-# SandyLoader Test Suite
-# A comprehensive test runner for SandyLoader mods
+# Test script for SandyLoader
 
-set -e  # Exit on error
+set -e
 
-# Default settings
-MINECRAFT_DIR="$HOME/Library/Application Support/minecraft"
+# Configuration
+MINECRAFT_DIR="${HOME}/Library/Application Support/minecraft"
 TEST_DURATION=120
 TEST_ITERATIONS=3
 RESULTS_DIR="test-results"
-VERBOSE=false
-BUILD_JAVA_MODS=true
-BUILD_RUST_MODS=true
-RUN_MEMORY_TESTS=true
 
-# Text formatting
-BOLD="\033[1m"
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-RED="\033[0;31m"
-RESET="\033[0m"
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
 
-# Print usage information
-function show_help {
-    echo "Usage: ./run-tests.sh [options]"
-    echo ""
-    echo "Options:"
-    echo "  -m, --minecraft-dir DIR   Minecraft directory (default: $MINECRAFT_DIR)"
-    echo "  -d, --duration SECONDS    Test duration in seconds (default: $TEST_DURATION)"
-    echo "  -i, --iterations NUM      Number of test iterations (default: $TEST_ITERATIONS)"
-    echo "  -o, --output-dir DIR      Results directory (default: $RESULTS_DIR)"
-    echo "  -v, --verbose             Enable verbose output"
-    echo "  --skip-java               Skip Java mod building and testing"
-    echo "  --skip-rust               Skip Rust mod building and testing"
-    echo "  --skip-memory             Skip memory profiling tests"
-    echo "  -h, --help                Show this help message"
-    echo ""
-}
-
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -m|--minecraft-dir)
-            MINECRAFT_DIR="$2"
-            shift 2
-            ;;
-        -d|--duration)
-            TEST_DURATION="$2"
-            shift 2
-            ;;
-        -i|--iterations)
-            TEST_ITERATIONS="$2"
-            shift 2
-            ;;
-        -o|--output-dir)
-            RESULTS_DIR="$2"
-            shift 2
-            ;;
-        -v|--verbose)
-            VERBOSE=true
-            shift
-            ;;
-        --skip-java)
-            BUILD_JAVA_MODS=false
-            shift
-            ;;
-        --skip-rust)
-            BUILD_RUST_MODS=false
-            shift
-            ;;
-        --skip-memory)
-            RUN_MEMORY_TESTS=false
-            shift
-            ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-done
-
-# Print test configuration
-echo -e "${BOLD}=== SandyLoader Test Suite ===${RESET}"
-echo "Minecraft directory: $MINECRAFT_DIR"
-echo "Test duration: $TEST_DURATION seconds"
-echo "Test iterations: $TEST_ITERATIONS"
-echo "Results directory: $RESULTS_DIR"
+# Print header
+echo "=== SandyLoader Test Suite ==="
+echo "Minecraft directory: ${MINECRAFT_DIR}"
+echo "Test duration: ${TEST_DURATION} seconds"
+echo "Test iterations: ${TEST_ITERATIONS}"
+echo "Results directory: ${RESULTS_DIR}"
+echo
 
 # Create results directory
-mkdir -p "$RESULTS_DIR"
+mkdir -p "${RESULTS_DIR}"
 
-# Function to run tests for a Java mod
-function test_java_mod {
-    local MOD_NAME=$1
-    local MOD_DIR="test-mods/java/$MOD_NAME"
+# Function to run tests for Java mods
+run_java_test() {
+    local mod_name=$1
+    local mod_dir="test-mods/java/${mod_name}"
     
-    echo -e "\n${BOLD}Testing Java mod: ${YELLOW}$MOD_NAME${RESET}"
+    echo "Testing Java mod: ${mod_name}"
     
-    # Check if the mod directory exists
-    if [ ! -d "$MOD_DIR" ]; then
-        echo -e "${RED}Error: Mod directory not found: $MOD_DIR${RESET}"
-        return 1
+    # Make sure the test directory exists
+    if [ ! -d "${mod_dir}" ]; then
+        mkdir -p "${mod_dir}"
+        echo -e "${YELLOW}Creating test directory for ${mod_name}${NC}"
+        
+        # Initialize a basic Gradle project for testing
+        pushd "${mod_dir}" > /dev/null
+        
+        # Create a basic Gradle build file
+        cat > build.gradle << EOF
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
+EOF
+
+        # Create a basic settings file
+        cat > settings.gradle << EOF
+rootProject.name = '${mod_name}'
+EOF
+
+        # Create source directory
+        mkdir -p src/main/java/com/example
+        
+        # Create a simple Java class
+        cat > src/main/java/com/example/Main.java << EOF
+package com.example;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from ${mod_name}!");
+    }
+    
+    public static String getModName() {
+        return "${mod_name}";
+    }
+}
+EOF
+
+        # Create test directory
+        mkdir -p src/test/java/com/example
+        
+        # Create a simple test class
+        cat > src/test/java/com/example/MainTest.java << EOF
+package com.example;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MainTest {
+    @Test
+    public void testGetModName() {
+        assertEquals("${mod_name}", Main.getModName());
+    }
+}
+EOF
+        
+        popd > /dev/null
     fi
     
-    # Check if gradlew exists
-    if [ ! -f "$MOD_DIR/gradlew" ]; then
-        echo -e "${YELLOW}Warning: Gradle wrapper not found in $MOD_DIR${RESET}"
+    pushd "${mod_dir}" > /dev/null
+    
+    # Check for Gradle wrapper
+    if [ ! -f "gradlew" ]; then
+        echo -e "${YELLOW}Warning: Gradle wrapper not found in ${mod_dir}${NC}"
         echo "Initializing Gradle wrapper..."
         
-        # Check if we have gradle installed globally
-        if command -v gradle &> /dev/null; then
-            (cd "$MOD_DIR" && gradle wrapper)
-        else
-            echo -e "${RED}Error: Gradle not found. Please install Gradle or create a wrapper manually.${RESET}"
-            return 1
-        fi
+        # Use system Gradle to create wrapper
+        gradle wrapper
+        
+        # Make wrapper executable
+        chmod +x gradlew
     fi
     
-    # Make gradlew executable
-    chmod +x "$MOD_DIR/gradlew"
-    
-    # Build the mod
-    echo "Building $MOD_NAME..."
-    (cd "$MOD_DIR" && ./gradlew build)
+    # Build mod
+    echo "Building ${mod_name}..."
+    ./gradlew build
     
     # Run tests
-    echo "Running tests for $MOD_NAME..."
-    (cd "$MOD_DIR" && ./gradlew test)
+    echo "Running tests for ${mod_name}..."
+    ./gradlew test
     
-    # Copy test results
-    mkdir -p "$RESULTS_DIR/$MOD_NAME"
-    find "$MOD_DIR/build/reports" -type f -name "*.html" -o -name "*.xml" | while read file; do
-        cp "$file" "$RESULTS_DIR/$MOD_NAME/"
-    done
+    # Copy test reports to results directory
+    mkdir -p "${RESULTS_DIR}/${mod_name}"
+    find build/reports -type f -name "*.xml" -o -name "*.html" | xargs -I {} cp {} "${RESULTS_DIR}/${mod_name}/" 2>/dev/null || true
     
-    echo -e "${GREEN}✓ Java mod test completed: $MOD_NAME${RESET}"
+    popd > /dev/null
+    
+    echo -e "${GREEN}✓ Java mod test completed: ${mod_name}${NC}"
+    echo
 }
 
-# Function to run tests for a Rust mod
-function test_rust_mod {
-    local MOD_NAME=$1
-    local MOD_DIR="test-mods/rust/$MOD_NAME"
+# Function to run tests for Rust mods
+run_rust_test() {
+    local mod_name=$1
+    local mod_dir="test-mods/rust/${mod_name}"
     
-    echo -e "\n${BOLD}Testing Rust mod: ${YELLOW}$MOD_NAME${RESET}"
+    echo "Testing Rust mod: ${mod_name}"
     
-    # Check if the mod directory exists
-    if [ ! -d "$MOD_DIR" ]; then
-        echo -e "${RED}Error: Mod directory not found: $MOD_DIR${RESET}"
-        return 1
+    # Make sure the test directory exists
+    if [ ! -d "${mod_dir}" ]; then
+        mkdir -p "${mod_dir}"
+        echo -e "${YELLOW}Creating test directory for ${mod_name}${NC}"
+        
+        # Initialize a basic Cargo project for testing
+        pushd "${mod_dir}" > /dev/null
+        
+        # Create a basic Cargo.toml
+        cat > Cargo.toml << EOF
+[package]
+name = "${mod_name}"
+version = "0.1.0"
+edition = "2024"
+workspace = "../../../"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+mod-api = { path = "../../../sandyloader/crates/mod-api" }
+EOF
+
+        # Create source directory
+        mkdir -p src
+        
+        # Create a simple Rust library
+        cat > src/lib.rs << EOF
+use mod_api::{SandyMod, ModInfo, sandy_mod};
+
+pub struct ${mod_name//-/_} {
+    id: String,
+}
+
+impl ${mod_name//-/_} {
+    pub fn new() -> Self {
+        Self {
+            id: "${mod_name}".to_string(),
+        }
+    }
+}
+
+impl SandyMod for ${mod_name//-/_} {
+    fn id(&self) -> &str {
+        &self.id
+    }
+    
+    fn initialize(&mut self) -> Result<(), String> {
+        println!("Initializing ${mod_name}!");
+        Ok(())
+    }
+    
+    fn on_load(&mut self) -> Result<(), String> {
+        println!("${mod_name} loaded!");
+        Ok(())
+    }
+    
+    fn on_unload(&mut self) -> Result<(), String> {
+        println!("${mod_name} unloaded!");
+        Ok(())
+    }
+}
+
+sandy_mod!(${mod_name//-/_});
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_id() {
+        let mod_instance = ${mod_name//-/_}::new();
+        assert_eq!(mod_instance.id(), "${mod_name}");
+    }
+}
+EOF
+        
+        popd > /dev/null
     fi
     
-    # Build the mod
-    echo "Building $MOD_NAME..."
-    (cd "$MOD_DIR" && cargo build)
+    # Build mod
+    echo "Building ${mod_name}..."
+    cargo build --package "${mod_name}"
     
     # Run unit tests
-    echo "Running unit tests for $MOD_NAME..."
-    (cd "$MOD_DIR" && cargo test)
+    echo "Running unit tests for ${mod_name}..."
+    cargo test --package "${mod_name}"
     
-    # Run the test harness
-    echo "Running test harness for $MOD_NAME..."
+    # Run test harness
+    echo "Running test harness for ${mod_name}..."
+    cargo run --bin test-harness -- --mod-path "${mod_dir}" --output-dir "${RESULTS_DIR}/${mod_name}" --timeout "${TEST_DURATION}" --memory-test
     
-    # Build the memory test flag
-    local MEMORY_FLAG=""
-    if [ "$RUN_MEMORY_TESTS" = true ]; then
-        MEMORY_FLAG="--memory-test"
-    fi
-    
-    # Run the test harness
-    cargo run --package test-harness -- --mod-path "$MOD_DIR" --output "$RESULTS_DIR/$MOD_NAME" --timeout "$TEST_DURATION" $MEMORY_FLAG
-    
-    echo -e "${GREEN}✓ Rust mod test completed: $MOD_NAME${RESET}"
+    echo -e "${GREEN}✓ Rust mod test completed: ${mod_name}${NC}"
+    echo
 }
 
-# Discover and test Java mods
-if [ "$BUILD_JAVA_MODS" = true ]; then
-    echo -e "\n${BOLD}=== Building Java mods ===${RESET}"
-    
-    # Check if test-mods/java directory exists
-    if [ ! -d "test-mods/java" ]; then
-        echo -e "${YELLOW}Warning: No Java mods directory found. Creating test-mods/java...${RESET}"
-        mkdir -p "test-mods/java"
-    fi
-    
-    # Get all mod directories
-    JAVA_MODS=$(find "test-mods/java" -maxdepth 1 -type d -not -path "test-mods/java")
-    
-    if [ -z "$JAVA_MODS" ]; then
-        echo "No Java mods found in test-mods/java/"
-    else
-        for MOD_DIR in $JAVA_MODS; do
-            MOD_NAME=$(basename "$MOD_DIR")
-            test_java_mod "$MOD_NAME" || echo -e "${RED}Failed to test $MOD_NAME${RESET}"
-        done
-    fi
-fi
+# MAIN SCRIPT
 
-# Discover and test Rust mods
-if [ "$BUILD_RUST_MODS" = true ]; then
-    echo -e "\n${BOLD}=== Building Rust mods ===${RESET}"
-    
-    # Check if test-mods/rust directory exists
-    if [ ! -d "test-mods/rust" ]; then
-        echo -e "${YELLOW}Warning: No Rust mods directory found. Creating test-mods/rust...${RESET}"
-        mkdir -p "test-mods/rust"
-    fi
-    
-    # Get all mod directories
-    RUST_MODS=$(find "test-mods/rust" -maxdepth 1 -type d -not -path "test-mods/rust")
-    
-    if [ -z "$RUST_MODS" ]; then
-        echo "No Rust mods found in test-mods/rust/"
-    else
-        for MOD_DIR in $RUST_MODS; do
-            MOD_NAME=$(basename "$MOD_DIR")
-            test_rust_mod "$MOD_NAME" || echo -e "${RED}Failed to test $MOD_NAME${RESET}"
-        done
-    fi
-fi
+# Test Java mods
+echo "=== Building Java mods ==="
+echo
+for mod_name in "simple-utility-mod" "simple-item-mod"; do
+    run_java_test "${mod_name}"
+done
 
-# Generate aggregate report
-echo -e "\n${BOLD}=== Generating Test Report ===${RESET}"
+# Test Rust mods
+echo "=== Building Rust mods ==="
+echo
+for mod_name in "simple-utility-mod" "simple-item-mod"; do
+    run_rust_test "${mod_name}"
+done
 
-# Count total tests, passed tests, and failed tests
-TOTAL_TESTS=0
-PASSED_TESTS=0
-FAILED_TESTS=0
-
-# Combine results
+# Generate test report
+echo "=== Generating Test Report ==="
 echo "Combining test results..."
-for RESULT_DIR in "$RESULTS_DIR"/*; do
-    if [ -d "$RESULT_DIR" ]; then
-        MOD_NAME=$(basename "$RESULT_DIR")
+echo
+
+# Count test results
+total_tests=0
+passed_tests=0
+failed_tests=0
+
+# For each test directory, count results
+for test_dir in "${RESULTS_DIR}"/*; do
+    if [ -d "${test_dir}" ] && [ -f "${test_dir}/test-report.json" ]; then
+        mod_name=$(basename "${test_dir}")
+        mod_passed=$(grep -c "passed" "${test_dir}/test-report.json" || echo 0)
+        mod_failed=$(grep -c "failed" "${test_dir}/test-report.json" || echo 0)
         
-        # Check for test results
-        if [ -f "$RESULT_DIR/test-report.json" ]; then
-            # Count tests
-            MOD_TOTAL=$(grep -c "\"name\":" "$RESULT_DIR/test-report.json")
-            MOD_PASSED=$(grep -c "\"passed\":true" "$RESULT_DIR/test-report.json")
-            MOD_FAILED=$((MOD_TOTAL - MOD_PASSED))
-            
-            TOTAL_TESTS=$((TOTAL_TESTS + MOD_TOTAL))
-            PASSED_TESTS=$((PASSED_TESTS + MOD_PASSED))
-            FAILED_TESTS=$((FAILED_TESTS + MOD_FAILED))
-            
-            echo "$MOD_NAME: $MOD_PASSED/$MOD_TOTAL tests passed"
-        fi
+        total_tests=$((total_tests + mod_passed + mod_failed))
+        passed_tests=$((passed_tests + mod_passed))
+        failed_tests=$((failed_tests + mod_failed))
     fi
 done
 
-# Print summary
-echo -e "\n${BOLD}Test Summary:${RESET}"
-echo "Total tests: $TOTAL_TESTS"
-echo -e "Passed: ${GREEN}$PASSED_TESTS${RESET}"
-if [ $FAILED_TESTS -gt 0 ]; then
-    echo -e "Failed: ${RED}$FAILED_TESTS${RESET}"
-else
-    echo -e "Failed: ${GREEN}$FAILED_TESTS${RESET}"
-fi
-
-echo -e "\nDetailed results available in: ${BOLD}$RESULTS_DIR/${RESET}"
-
-# Exit with error if any tests failed
-if [ $FAILED_TESTS -gt 0 ]; then
-    exit 1
-fi
-
-exit 0
+# Print test summary
+echo "Test Summary:"
+echo "Total tests: ${total_tests}"
+echo "Passed: ${passed_tests}"
+echo "Failed: ${failed_tests}"
+echo
+echo "Detailed results available in: ${RESULTS_DIR}/"

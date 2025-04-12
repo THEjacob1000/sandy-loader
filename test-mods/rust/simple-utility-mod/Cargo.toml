@@ -1,6 +1,6 @@
-# test-mods/rust/simple-item-mod/Cargo.toml
+# test-mods/rust/simple-utility-mod/Cargo.toml
 [package]
-name = "simple-item-mod"
+name = "simple-utility-mod"
 version = "0.1.0"
 edition = "2024"
 workspace = "../../../"

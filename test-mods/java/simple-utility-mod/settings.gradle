@@ -1,0 +1,2 @@
+// test-mods/java/simple-utility-mod/settings.gradle
+rootProject.name = 'simple-utility-mod'

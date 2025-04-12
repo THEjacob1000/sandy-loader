@@ -1,9 +1,12 @@
 [workspace]
-members = ["sandyloader", "sandyloader/crates/*", "tools/*"]
+members = ["sandyloader", "sandyloader/crates/*", "tools/*", "test-mods/rust/*"]
 
 [workspace.package]
 version = "0.1.0"
-authors = ["Jacob Sanderson jacob@jacobdevelops.com"]
+authors = ["Jacob Sanderson <jacob@jacobdevelops.com>"]
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/THEjacob1000/sandy-loader"
+repository = "https://github.com/THEjacob1000/sandyloader-repo"
+
+# Explicitly set resolver version for edition 2024
+resolver = "3"
