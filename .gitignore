@@ -6,8 +6,11 @@ Cargo.lock
 
 # Gradle
 /build
-/.gradle/
-/*/build
+**/.gradle/
+**/*/build
+
+# Testing
+**/test-results/
 
 # IDE
 .idea/

@@ -1,4 +1,4 @@
-// test-mods/java/simple-utility-mod/src/main/java/com/example/Main.java
+
 package com.example;
 
 public class Main {

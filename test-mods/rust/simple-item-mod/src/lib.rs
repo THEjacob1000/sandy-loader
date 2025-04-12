@@ -1,11 +1,11 @@
 // test-mods/rust/simple-item-mod/src/lib.rs
-use mod_api::{sandy_mod, ModInfo, SandyMod};
+use mod_api::{SandyMod, sandy_mod};
 
-pub struct simple_item_mod {
+pub struct SimpleItemMod {
     id: String,
 }
 
-impl simple_item_mod {
+impl SimpleItemMod {
     pub fn new() -> Self {
         Self {
             id: "simple-item-mod".to_string(),
@@ -13,7 +13,7 @@ impl simple_item_mod {
     }
 }
 
-impl SandyMod for simple_item_mod {
+impl SandyMod for SimpleItemMod {
     fn id(&self) -> &str {
         &self.id
     }
@@ -34,7 +34,7 @@ impl SandyMod for simple_item_mod {
     }
 }
 
-sandy_mod!(simple_item_mod);
+sandy_mod!(SimpleItemMod);
 
 #[cfg(test)]
 mod tests {
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn test_id() {
-        let mod_instance = simple_item_mod::new();
+        let mod_instance = SimpleItemMod::new();
         assert_eq!(mod_instance.id(), "simple-item-mod");
     }
 }

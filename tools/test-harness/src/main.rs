@@ -1,7 +1,6 @@
 // tools/test-harness/src/main.rs
 use clap::Parser;
 use std::path::PathBuf;
-use std::time::Duration;
 
 /// Test harness for SandyLoader mods
 #[derive(Parser, Debug)]
