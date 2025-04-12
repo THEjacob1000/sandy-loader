@@ -1,5 +1,14 @@
 [workspace]
-members = ["sandyloader", "sandyloader/crates/*", "tools/*", "test-mods/rust/*"]
+members = [
+    "sandyloader",
+    "sandyloader/crates/jni-bridge",
+    "sandyloader/crates/memory-manager",
+    "sandyloader/crates/mod-api",
+    "tools/mod-analyzer",
+    "tools/profiler",
+    "tools/test-harness",
+    "test-mods/rust/*",
+]
 resolver = "3"
 
 

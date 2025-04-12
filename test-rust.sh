@@ -21,92 +21,96 @@ RUST_FAILED=0
 # Keep track of failed tests for summary
 FAILED_TESTS=()
 
-# Find all Rust mod directories
-RUST_MOD_DIRS=$(find test-mods/rust -mindepth 1 -maxdepth 1 -type d 2>/dev/null || echo "")
+# Run cargo test from the root directory
+echo "Running Rust tests..."
+OUTPUT=$(cargo test 2>&1)
+EXIT_CODE=$?
 
-# If no directories found, print message and return
-if [ -z "$RUST_MOD_DIRS" ]; then
-    echo "No Rust mods found for testing"
+if [ $EXIT_CODE -ne 0 ]; then
+    echo -e "${RED}Cargo test failed with exit code $EXIT_CODE${NC}"
+    echo -e "  ${RED}✘${NC} Compilation or test runner error"
+    echo "$OUTPUT" | grep -E "error(\[E[0-9]+\])?:" | head -3
+    RUST_TOTAL=1
+    RUST_FAILED=1
+    FAILED_TESTS+=("${RED}✘ [fail]:${NC} Cargo tests: Compilation error")
+
+    # Output test counts
     echo ""
-    echo "RUST_TOTAL=0"
-    echo "RUST_PASSED=0"
-    echo "RUST_FAILED=0"
+    echo "RUST_TOTAL=$RUST_TOTAL"
+    echo "RUST_PASSED=$RUST_PASSED"
+    echo "RUST_FAILED=$RUST_FAILED"
     echo "BEGIN_FAILURES"
+    for FAILURE in "${FAILED_TESTS[@]}"; do
+        echo "$FAILURE"
+    done
     echo "END_FAILURES"
-    exit 0
+    exit 1
 fi
 
-# Process each Rust mod
-for MOD_DIR in $RUST_MOD_DIRS; do
-    MOD_NAME=$(basename "$MOD_DIR")
+# Extract all test lines first
+TEST_LINES=$(echo "$OUTPUT" | grep -E "^test [^\.]+\.\.\. (ok|FAILED|ignored)" || echo "")
+if [ -z "$TEST_LINES" ]; then
+    echo "No tests found in cargo test output."
 
-    echo -e "${BOLD}$MOD_NAME${NC}"
-    MOD_TESTS_PASSED=true
-
-    # Check if Cargo.toml exists
-    if [ ! -f "$MOD_DIR/Cargo.toml" ]; then
-        echo -e "  ${RED}✘${NC} No Cargo.toml found"
-        RUST_TOTAL=$((RUST_TOTAL + 1))
-        RUST_FAILED=$((RUST_FAILED + 1))
-        FAILED_TESTS+=("${RED}✘ [fail]:${NC} $MOD_NAME: No Cargo.toml found")
-        echo ""
-        continue
+    # Check if there were actually test runs with 0 tests
+    if [[ "$OUTPUT" == *"running 0 tests"* ]]; then
+        echo -e "${GREEN}All crates compiled successfully, but no tests were found.${NC}"
     fi
 
-    # Run cargo test to find tests with `#[cfg(test)]`
-    # In a real implementation, you would use the actual cargo test command
-    OUTPUT=$(cd "$MOD_DIR" && cargo test 2>&1)
-    EXIT_CODE=$?
+    # Mark as success since cargo test passed
+    RUST_TOTAL=0
+    RUST_PASSED=0
+    RUST_FAILED=0
+else
+    # Process all crates and tests
+    CURRENT_CRATE=""
+    CURRENT_DISPLAY_NAME=""
 
-    # Parse test results
-    if [ $EXIT_CODE -eq 0 ]; then
-        # Extract test names and results from cargo test output
-        # Looking for lines with "test tests::" and "... ok" or "... FAILED"
-        TESTS=$(echo "$OUTPUT" | grep -E "test tests::[a-zA-Z0-9_]+ \.\.\. (ok|FAILED)" || echo "")
+    # Process the output line by line
+    while IFS= read -r line; do
+        # Check if this is a line starting a new crate's tests
+        if [[ $line =~ Running\ unittests.*\(target/debug/deps/([^-]+)-.+\) ]]; then
+            # If we had a previous crate, add a blank line
+            if [ -n "$CURRENT_CRATE" ]; then
+                echo ""
+            fi
 
-        # If no tests were found, try a simpler pattern
-        if [ -z "$TESTS" ]; then
-            TESTS=$(echo "$OUTPUT" | grep -E "test [a-zA-Z0-9_:]+ \.\.\. (ok|FAILED)" || echo "")
+            # Extract and format the crate name
+            CURRENT_CRATE="${BASH_REMATCH[1]}"
+            CURRENT_DISPLAY_NAME=$(echo "$CURRENT_CRATE" | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1')
+            echo -e "${BOLD}${CURRENT_DISPLAY_NAME}${NC}"
+
+        # Process test lines
+        elif [[ $line =~ ^test\ ([^\.]+)\.\.\.\ (ok|FAILED|ignored) ]]; then
+            # Extract test name and result
+            TEST_NAME="${BASH_REMATCH[1]}"
+            RESULT="${BASH_REMATCH[2]}"
+
+            # Skip ignored tests
+            if [[ "$RESULT" == "ignored" ]]; then
+                continue
+            fi
+
+            # Format the test name for display
+            DISPLAY_TEST=$(echo "$TEST_NAME" | sed 's/tests:://' | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1')
+
+            # Count tests
+            if [[ "$RESULT" == "ok" ]]; then
+                echo -e "  ${GREEN}✓${NC} $DISPLAY_TEST"
+                ((RUST_PASSED++))
+                ((RUST_TOTAL++))
+            else
+                echo -e "  ${RED}✘${NC} $DISPLAY_TEST"
+                ((RUST_FAILED++))
+                ((RUST_TOTAL++))
+                FAILED_TESTS+=("${RED}✘ [fail]:${NC} ${CURRENT_DISPLAY_NAME}.$TEST_NAME")
+            fi
         fi
-
-        # Process each test result
-        if [ -n "$TESTS" ]; then
-            while IFS= read -r TEST_LINE; do
-                # Extract test name and result from the line
-                TEST_NAME=$(echo "$TEST_LINE" | grep -o "test [a-zA-Z0-9_:]\+" | sed 's/test //')
-                TEST_RESULT=$(echo "$TEST_LINE" | grep -o " ok\| FAILED" | tr -d ' ')
-
-                # Format the test name for display
-                DISPLAY_NAME=$(echo "$TEST_NAME" | sed 's/tests:://' | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1')
-
-                RUST_TOTAL=$((RUST_TOTAL + 1))
-
-                if [[ "$TEST_RESULT" == "ok" ]]; then
-                    echo -e "  ${GREEN}✓${NC} $DISPLAY_NAME"
-                    RUST_PASSED=$((RUST_PASSED + 1))
-                else
-                    echo -e "  ${RED}✘${NC} $DISPLAY_NAME"
-                    RUST_FAILED=$((RUST_FAILED + 1))
-                    FAILED_TESTS+=("${RED}✘ [fail]:${NC} $MOD_NAME.$TEST_NAME")
-                fi
-            done < <(echo "$TESTS")
-        else
-            # If no tests were found, report it
-            echo -e "  ${GREEN}✓${NC} No tests found or failed to parse test output"
-            RUST_TOTAL=$((RUST_TOTAL + 1))
-            RUST_PASSED=$((RUST_PASSED + 1))
-        fi
-    else
-        echo -e "  ${RED}✘${NC} Compilation or test runner error"
-        RUST_TOTAL=$((RUST_TOTAL + 1))
-        RUST_FAILED=$((RUST_FAILED + 1))
-        FAILED_TESTS+=("${RED}✘ [fail]:${NC} $MOD_NAME: Compilation error")
-    fi
-
-    echo ""
-done
+    done < <(echo "$OUTPUT")
+fi
 
 # Output test counts (for the main script to parse)
+echo ""
 echo "RUST_TOTAL=$RUST_TOTAL"
 echo "RUST_PASSED=$RUST_PASSED"
 echo "RUST_FAILED=$RUST_FAILED"
