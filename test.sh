@@ -286,15 +286,19 @@ failed_tests=0
 for test_dir in "${RESULTS_DIR}"/*; do
     if [ -d "${test_dir}" ] && [ -f "${test_dir}/test-report.json" ]; then
         mod_name=$(basename "${test_dir}")
-        # Use grep with -c but ensure we handle the case where grep returns 0 safely
-        mod_passed=$(grep -c "passed" "${RESULTS_DIR}/${mod_name}/test-report.json" || echo "0")
-        mod_failed=$(grep -c "failed" "${RESULTS_DIR}/${mod_name}/test-report.json" || echo "0")
         
-        # Add using normal arithmetic, not using $(( )) which can have issues with empty values
-        total_tests=$((total_tests + mod_passed))
-        total_tests=$((total_tests + mod_failed))
-        passed_tests=$((passed_tests + mod_passed))
-        failed_tests=$((failed_tests + mod_failed))
+        # Count manually by checking if strings exist in the file
+        if grep -q "passed" "${test_dir}/test-report.json"; then
+            # Increment counters by 1 for each module test that passed
+            passed_tests=$((passed_tests + 1))
+            total_tests=$((total_tests + 1))
+        fi
+        
+        if grep -q "failed" "${test_dir}/test-report.json"; then
+            # Increment counters by 1 for each module test that failed
+            failed_tests=$((failed_tests + 1))
+            total_tests=$((total_tests + 1))
+        fi
     fi
 done
 
