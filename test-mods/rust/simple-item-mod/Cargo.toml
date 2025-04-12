@@ -1,0 +1,21 @@
+[package]
+name = "simple-item-mod"
+version = "1.0.0"
+edition = "2021"
+authors = ["SandyLoader Team"]
+license = "MIT"
+description = "A simple test mod that adds an item and consumes memory"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+mod-api = { path = "../../../sandyloader/crates/mod-api" }
+log = "0.4.20"
+rand = "0.8.5"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true

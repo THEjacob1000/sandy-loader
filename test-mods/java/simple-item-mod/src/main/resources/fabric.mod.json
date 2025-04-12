@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "simple_item_mod",
+  "version": "1.0.0",
+  "name": "Simple Item Mod",
+  "description": "A simple test mod that adds an item and consumes memory",
+  "authors": ["SandyLoader Team"],
+  "contact": {
+    "homepage": "https://github.com/THEjacob1000/sandy-loader",
+    "sources": "https://github.com/THEjacob1000/sandy-loader"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.sandyloader.testmod.SimpleItemMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.21",
+    "fabric-api": "*",
+    "minecraft": "1.19.x",
+    "java": ">=17"
+  }
+}
