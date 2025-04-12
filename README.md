@@ -99,7 +99,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact
 
 - GitHub Issues: For bug reports and feature requests
-- [Discord Server](https://discord.gg/sandyLoader) (coming soon): For community discussions
+- [Discord Server](https://discord.gg/d2ChakjBjR): For community discussions
 
 ---
 
