@@ -18,14 +18,15 @@ pub enum BridgeError {
 pub type Result<T> = std::result::Result<T, BridgeError>;
 
 /// Call a Java method from Rust
-pub fn call_java_method(
-    env: &JNIEnv,
-    obj: &JObject,
+pub fn call_java_method<'local, 'obj>(
+    env: &mut JNIEnv<'local>,
+    obj: &JObject<'obj>,
     method_name: &str,
     method_sig: &str,
-    args: &[JValue],
-) -> Result<JValue> {
-    Ok(env.call_method(obj, method_name, method_sig, args)?)
+    args: &[JValue<'local, 'local>],
+) -> Result<jni::objects::JValueGen<jni::objects::JObject<'local>>> {
+    let result = env.call_method(obj, method_name, method_sig, args)?;
+    Ok(result)
 }
 
 /// Register a native method in Java
