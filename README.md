@@ -5,15 +5,15 @@
 
 ## 🚀 Project Overview
 
-SandyLoader is an ambitious project to refactor Minecraft mods from "All The Mods 10" into Rust to dramatically reduce memory usage, allowing modded Minecraft to run on systems with less than 8GB RAM.
+SandyLoader is an ambitious project to create a Rust-based mod loader for Minecraft that dramatically reduces memory usage. By refactoring critical mod functionality from Java to Rust, SandyLoader enables modded Minecraft to run on systems with less than 8GB RAM.
 
 **Key Features:**
 
 - Native code performance with Rust
 - JNI integration with the Minecraft ecosystem
 - Custom modloader extensions for Forge/Fabric
-- Memory-optimized versions of popular mods
-- Extensive profiling and optimization tools
+- Memory optimization architecture
+- Comprehensive profiling and optimization tools
 
 ## 📋 Project Status
 
@@ -27,16 +27,16 @@ This project is in early development. We are currently in the research and plann
 
 ## 🔍 The Problem
 
-Modded Minecraft (especially larger packs like All The Mods) has become increasingly memory-hungry, making it inaccessible to players with budget hardware. This project aims to make modded Minecraft more accessible by addressing the root cause: inefficient memory usage in Java-based mods.
+Modded Minecraft (especially larger packs like All The Mods) has become increasingly memory-hungry, making it inaccessible to players with budget hardware. This project aims to make modded Minecraft more accessible by addressing the root cause: inefficient memory usage in Java-based mods and modloaders.
 
 ## 💡 Our Approach
 
 Instead of just optimizing existing Java code, we're taking a more radical approach:
 
-1. Identify the most memory-intensive mods
-2. Reimplement core functionality in Rust using JNI
-3. Create a custom modloader extension to bridge the Java and Rust ecosystems
-4. Optimize shared resources across mods
+1. Build a Rust-based mod loader and memory management system
+2. Create a JNI bridge for seamless Java/Rust interoperability
+3. Develop a common API for creating memory-efficient Rust mods
+4. Provide tools for analyzing and profiling Minecraft memory usage
 5. Maintain compatibility with the existing modding ecosystem
 
 ## 🗺️ Roadmap
@@ -66,26 +66,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
 
 We're currently focusing on:
 
-1. Profiling ATM10 to identify memory usage patterns
-2. Researching Rust-JNI integration approaches
-3. Analyzing the architecture of key memory-intensive mods
-4. Building proof-of-concept prototypes
+1. Building the core SandyLoader architecture
+2. Developing memory profiling tools
+3. Creating the JNI bridge between Java and Rust
+4. Designing the mod API for Rust-based mods
 
 ## 📥 Installation
 
 *Note: There is no installable version yet. This section will be updated when alpha builds become available.*
 
-## 🎮 Featured Modpack
-
-**"ATM10: Sandstorm"** - Our first optimized modpack based on "All The Mods 10" but designed to run on systems with less than 8GB RAM. This modpack will feature the first set of memory-optimized mods using our SandyLoader technology.
-
 ## 📊 Target Performance
 
-Our goal is to reduce memory requirements by 40-60% compared to the original Java implementations, allowing All The Mods 10 to run with less than 8GB RAM.
+Our goal is to reduce memory requirements by 40-60% compared to the original Java implementations, allowing modpack experiences like "All The Mods 10" to run with less than 8GB RAM.
 
 ## 📚 Documentation
 
 - [Project Plan](PROJECTPLAN.md)
+- [Contributing Guide](CONTRIBUTING.md)
 - [Technical Architecture](docs/ARCHITECTURE.md) (coming soon)
 - [Development Setup](docs/DEVSETUP.md) (coming soon)
 - [Mod Porting Guide](docs/MODPORTING.md) (coming soon)
