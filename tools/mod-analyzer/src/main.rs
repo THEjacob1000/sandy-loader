@@ -1,5 +1,6 @@
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -100,9 +101,9 @@ fn analyze_mod(args: &Args) -> MemoryAnalysisResult {
 
     // For now, we'll simulate this with placeholder data
     let mut memory_usage_timeline = Vec::new();
-    let mut peak_memory = 0.0;
-    let mut total_memory = 0.0;
-    let mut sample_count = 0;
+    let mut peak_memory: f64 = 0.0;
+    let mut total_memory: f64 = 0.0;
+    let mut sample_count: u64 = 0;
 
     let initial_memory = if args.rust { 120.0 } else { 180.0 };
 

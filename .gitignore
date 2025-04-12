@@ -4,6 +4,9 @@
 Cargo.lock
 **/target/
 
+# Java
+.gradle/
+
 # IDE
 .idea/
 *.iml
