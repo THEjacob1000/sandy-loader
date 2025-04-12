@@ -11,6 +11,7 @@ Cargo.lock
 
 # Testing
 **/test-results/
+plan
 
 # IDE
 .idea/
