@@ -305,7 +305,7 @@ done
 # Print test summary
 echo "Test Summary:"
 echo "Total tests: ${total_tests}"
-echo "Passed: ${passed_tests}"
-echo "Failed: ${failed_tests}"
+echo -e "Passed: ${GREEN}${passed_tests}${NC}"
+echo -e "Failed: ${RED}${failed_tests}${NC}"
 echo
 echo "Detailed results available in: ${RESULTS_DIR}/"
